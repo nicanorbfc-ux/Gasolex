@@ -110,8 +110,6 @@ if tipo_origen == "Mi ubicación actual":
 
     ubicacion = streamlit_geolocation()
 
-    st.write("DEBUG ubicación:", ubicacion)
-
     if ubicacion and ubicacion.get("latitude") is not None:
 
         st.success(
