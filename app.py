@@ -7,7 +7,8 @@ import sqlite3
 import requests
 import gasolex
 from streamlit_geolocation import streamlit_geolocation
-
+import folium
+from streamlit_folium import st_folium
 
 # ============================================================
 # CONFIGURACIÓN
@@ -80,25 +81,22 @@ def buscar_coordenadas(direccion):
 # ============================================================
 
 st.title("GASOLEX")
-
-st.subheader("Parámetros de búsqueda")
+st.write("Encuentra las gasolineras más baratas cerca de ti")
 
 
 # ============================================================
 # ORIGEN
 # ============================================================
 
-st.subheader("Origen")
+st.subheader("📍 Origen de la búsqueda")
 
 tipo_origen = st.radio(
-    "¿Cómo quieres indicar el origen?",
-    [
-        "Mi ubicación actual",
+    " Opciones",
+    [   "Mi ubicación actual",
         "Dirección o localidad",
-        "Coordenadas"
+        "Elegir en el mapa"
     ]
 )
-
 
 # ------------------------------------------------------------
 # Mi ubicación actual
@@ -108,44 +106,60 @@ if tipo_origen == "Mi ubicación actual":
 
     st.write("Pulsa el botón para obtener tu ubicación:")
 
-    ubicacion = streamlit_geolocation()
+    col_boton, col_resultado = st.columns([1, 8])
 
-    if ubicacion and ubicacion.get("latitude") is not None:
+    with col_boton:
 
-        st.success(
-            f"Ubicación obtenida: "
-            f"{ubicacion['latitude']:.6f}, "
-            f"{ubicacion['longitude']:.6f}"
+        ubicacion = streamlit_geolocation()
+
+    with col_resultado:
+
+        if ubicacion and ubicacion.get("latitude") is not None:
+
+            st.success(
+                f"Ubicación obtenida: "
+                f"{ubicacion['latitude']:.6f}, "
+                f"{ubicacion['longitude']:.6f}"
+            )
+
+            st.session_state.lat_origen = ubicacion["latitude"]
+            st.session_state.lon_origen = ubicacion["longitude"]
+            st.session_state.nombre_origen = "Mi ubicación actual"
+# ------------------------------------------------------------
+# Elegir en el mapa
+# ------------------------------------------------------------
+
+if tipo_origen == "Elegir en el mapa":
+
+    st.write("🗺️ Selecciona tu ubicación en el mapa")
+
+    mapa = folium.Map(
+        location=[
+            st.session_state.lat_origen,
+            st.session_state.lon_origen
+        ],
+        zoom_start=13
+    )
+
+    datos_mapa = st_folium(
+        mapa,
+        width="100%",
+        height=500
+    )
+
+    if datos_mapa and datos_mapa.get("last_clicked"):
+
+        latitud = datos_mapa["last_clicked"]["lat"]
+        longitud = datos_mapa["last_clicked"]["lng"]
+
+        st.session_state.lat_origen = latitud
+        st.session_state.lon_origen = longitud
+        st.session_state.nombre_origen = "Ubicación seleccionada"
+
+        st.write(
+            f"Ubicación seleccionada: "
+            f"{latitud:.6f}, {longitud:.6f}"
         )
-
-        st.session_state.lat_origen = ubicacion["latitude"]
-        st.session_state.lon_origen = ubicacion["longitude"]
-        st.session_state.nombre_origen = "Mi ubicación actual"
-
-
-# ------------------------------------------------------------
-# Coordenadas
-# ------------------------------------------------------------
-
-if tipo_origen == "Coordenadas":
-
-    lat_origen = st.number_input(
-        "Latitud",
-        value=st.session_state.lat_origen,
-        format="%.8f"
-    )
-
-    lon_origen = st.number_input(
-        "Longitud",
-        value=st.session_state.lon_origen,
-        format="%.8f"
-    )
-
-    st.session_state.lat_origen = lat_origen
-    st.session_state.lon_origen = lon_origen
-    st.session_state.nombre_origen = "Coordenadas introducidas"
-
-
 # ------------------------------------------------------------
 # Dirección o localidad
 # ------------------------------------------------------------
@@ -154,52 +168,41 @@ if tipo_origen == "Dirección o localidad":
 
     direccion_origen = st.text_input(
         "Dirección o localidad",
-        value="Plaza de la Libertad, Oviedo"
+#        value="Plaza de la Libertad, Oviedo"
     )
 
-    if st.button("LOCALIZAR ORIGEN"):
+    col_boton, col_resultado = st.columns([2, 8])
 
-        coordenadas = buscar_coordenadas(direccion_origen)
+    with col_boton:
 
-        if coordenadas:
+        localizar = st.button("LOCALIZAR ORIGEN")
 
-            st.session_state.lat_origen = coordenadas[0]
-            st.session_state.lon_origen = coordenadas[1]
-            st.session_state.nombre_origen = direccion_origen
+    with col_resultado:
 
-            st.success(
-                f"Origen localizado: "
-                f"{st.session_state.lat_origen:.6f}, "
-                f"{st.session_state.lon_origen:.6f}"
-            )
+        if localizar:
 
-        else:
-            st.error("No se ha encontrado la dirección.")
+            coordenadas = buscar_coordenadas(direccion_origen)
 
+            if coordenadas:
 
-# ============================================================
-# MOSTRAR ORIGEN
-# ============================================================
+                st.session_state.lat_origen = coordenadas[0]
+                st.session_state.lon_origen = coordenadas[1]
+                st.session_state.nombre_origen = direccion_origen
 
-st.subheader("Origen seleccionado")
+                st.success(
+                    f"Origen localizado: "
+                    f"{st.session_state.lat_origen:.6f}, "
+                    f"{st.session_state.lon_origen:.6f}"
+                )
 
-st.write(
-    f"📍 Origen: **{st.session_state.nombre_origen}**"
-)
+            else:
 
-st.write(
-    f"Coordenadas: "
-    f"**{st.session_state.lat_origen:.6f}, "
-    f"{st.session_state.lon_origen:.6f}**"
-)
+                st.error("No se ha encontrado la dirección.")
 
-
-# ============================================================
-# PARÁMETROS DE BÚSQUEDA
-# ============================================================
 # ============================================================
 # COMBUSTIBLES
 # ============================================================
+st.subheader("⛽ Seleccionar combustible o combustibles")
 
 combustibles_diesel = {
     "Diésel": "GOA",
@@ -262,8 +265,14 @@ gasolina_seleccionadas = st.pills(
 # ------------------------------------------------------------
 
 precio_maximo_texto = st.text_input(
-    "Precio máximo (€/L)",
-    value="1.80"
+    "💶 Precio máximo (€/L)"
+)
+
+st.markdown(
+    '<div style="margin-top:-18px; margin-bottom:10px; font-size:0.85em;">'
+    'Para reducir el nº de resultados o para "Todos" dejar en blanco'
+    '</div>',
+    unsafe_allow_html=True
 )
 
 precio_maximo_valido = True
@@ -292,51 +301,17 @@ else:
 # ------------------------------------------------------------
 
 radio = st.number_input(
-    "Radio (km)",
+    "📏 Radio (km)",
     min_value=1.0,
     value=20.0,
     step=1.0
 )
 
-
-# ============================================================
-# RESUMEN DE LA BÚSQUEDA
-# ============================================================
-
-st.subheader("Resumen de búsqueda")
-
-if precio_maximo == 0:
-    texto_precio = "Sin límite de precio"
-
-else:
-    texto_precio = f"Hasta {precio_maximo:.2f} €/L"
-
-nombres_combustibles = (
-    diesel_seleccionados
-    if diesel_seleccionados
-    else gasolina_seleccionadas
-)
-
-st.write(
-    f"⛽ Combustible: **{', '.join(nombres_combustibles)}**"
-)
-
-st.write(
-    f"💶 Precio máximo: **{texto_precio}**"
-)
-
-st.write(
-    f"📏 Radio: **{radio:.0f} km**"
-)
-
-st.write(
-    f"📍 Origen: **{st.session_state.nombre_origen}**"
-)
-
-st.write(
-    f"Coordenadas: "
-    f"**{st.session_state.lat_origen:.6f}, "
-    f"{st.session_state.lon_origen:.6f}**"
+st.markdown(
+    '<div style="margin-top:-18px; margin-bottom:10px; font-size:0.85em;">'
+    'De búsqueda (en línea recta) de las gasolineras'
+    '</div>',
+    unsafe_allow_html=True
 )
 
 # ============================================================
@@ -486,7 +461,7 @@ if st.button(
     st.dataframe(
         datos,
         hide_index=True,
-        width="content",
+        width="stretch",
         height=500,
         column_config={
             "Diésel": st.column_config.TextColumn(
@@ -530,7 +505,7 @@ if st.button(
             ),
             "Ubicación": st.column_config.TextColumn(
                 "Ubicación",
-                width=300
+                width=500
             )
         }
     )

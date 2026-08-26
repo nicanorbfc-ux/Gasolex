@@ -284,6 +284,96 @@ def actualizar_estacion(conexion, estacion):
                 combustible
             ))
 # ============================================================
+# 8. VALIDACIÓN
+# ============================================================
+
+def validar_actualizacion(conexion, fecha_datos):
+
+    cursor = conexion.cursor()
+
+    # --------------------------------------------------------
+    # Fecha de los datos
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        SELECT Valor
+        FROM Configuracion
+        WHERE Clave = 'FechaDatos'
+    """)
+
+    fecha_bd = cursor.fetchone()
+
+    if fecha_bd is None or fecha_bd[0] != fecha_datos:
+        raise Exception(
+            "La FechaDatos de la BD no coincide con la descarga."
+        )
+
+    # --------------------------------------------------------
+    # Número de gasolineras
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM Gasolineras
+    """)
+
+    numero_gasolineras = cursor.fetchone()[0]
+
+    if numero_gasolineras == 0:
+        raise Exception(
+            "La tabla Gasolineras ha quedado vacía."
+        )
+
+    # --------------------------------------------------------
+    # Número de precios
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM Precios
+    """)
+
+    numero_precios = cursor.fetchone()[0]
+
+    if numero_precios == 0:
+        raise Exception(
+            "La tabla Precios ha quedado vacía."
+        )
+
+    # --------------------------------------------------------
+    # Precios sin gasolinera correspondiente
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM Precios
+        WHERE IDEESS NOT IN (
+            SELECT IDEESS
+            FROM Gasolineras
+        )
+    """)
+
+    precios_huerfanos = cursor.fetchone()[0]
+
+    if precios_huerfanos != 0:
+        raise Exception(
+            f"Hay {precios_huerfanos} precios sin gasolinera."
+        )
+
+    # --------------------------------------------------------
+    # Resultado
+    # --------------------------------------------------------
+
+    print()
+    print("VALIDACIÓN")
+    print("----------")
+    print(f"Fecha de datos:          {fecha_bd[0]}")
+    print(f"Gasolineras:             {numero_gasolineras}")
+    print(f"Precios:                 {numero_precios}")
+    print(f"Precios sin gasolinera:  {precios_huerfanos}")
+    print("Validación correcta.")
+
+# ============================================================
 # PROGRAMA PRINCIPAL
 # ============================================================
 
@@ -298,6 +388,26 @@ print(f"Resultado consulta: {datos['ResultadoConsulta']}")
 estaciones = datos["ListaEESSPrecio"]
 
 print(f"Estaciones recibidas: {len(estaciones)}")
+
+# ------------------------------------------------------------
+# Simulación
+# ------------------------------------------------------------
+
+conexion = sqlite3.connect(RUTA_BD)
+
+simular_actualizacion(conexion, estaciones)
+
+conexion.close()
+
+# ------------------------------------------------------------
+# Copia de seguridad
+# ------------------------------------------------------------
+
+crear_copia_seguridad()
+
+# ------------------------------------------------------------
+# Actualización de SQLite
+# ------------------------------------------------------------
 
 conexion = sqlite3.connect(RUTA_BD)
 
@@ -329,6 +439,8 @@ try:
 
     print("Actualización realizada correctamente.")
     print("COMMIT ejecutado.")
+
+    validar_actualizacion(conexion, datos["Fecha"])
 
 except Exception as error:
 
