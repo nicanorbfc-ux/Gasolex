@@ -403,7 +403,7 @@ conexion.close()
 # Copia de seguridad
 # ------------------------------------------------------------
 
-crear_copia_seguridad()
+#crear_copia_seguridad()
 
 # ------------------------------------------------------------
 # Actualización de SQLite
@@ -435,12 +435,13 @@ try:
 
     print(f"{len(estaciones)} / {len(estaciones)}")
 
+    validar_actualizacion(conexion, datos["Fecha"])
+
     conexion.commit()
 
     print("Actualización realizada correctamente.")
     print("COMMIT ejecutado.")
 
-    validar_actualizacion(conexion, datos["Fecha"])
 
 except Exception as error:
 
