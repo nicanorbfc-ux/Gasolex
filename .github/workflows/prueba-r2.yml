@@ -12,16 +12,41 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Instalar boto3
+        run: pip install boto3
+
       - name: Descargar gasolex.db desde R2
-        uses: keithweaver/aws-s3-cp-action@v1
-        with:
-          source: "s3://gasolex/gasolex.db"
-          dest: "./gasolex.db"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
-          AWS_ENDPOINT_URL: https://f0026ea67a66c1918d0233254ca21b0f.r2.cloudflarestorage.com
+          R2_ACCOUNT_ID: f0026ea67a66c1918d0233254ca21b0f
+        run: |
+          python - <<'PY'
+          import boto3
+          import os
+
+          endpoint = (
+              f"https://{os.environ['R2_ACCOUNT_ID']}"
+              ".r2.cloudflarestorage.com"
+          )
+
+          s3 = boto3.client(
+              "s3",
+              endpoint_url=endpoint,
+              region_name="auto",
+              aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"]
+          )
+
+          s3.download_file(
+              "gasolex",
+              "gasolex.db",
+              "gasolex.db"
+          )
+
+          print("Descarga de gasolex.db: OK")
+          PY
 
       - name: Comprobar SQLite
         run: |
@@ -38,15 +63,22 @@ jobs:
           """).fetchall()
 
           print("Tablas encontradas:")
+
           for tabla in tablas:
               print(" -", tabla[0])
 
           nombres = {tabla[0] for tabla in tablas}
-          necesarias = {"Gasolineras", "Precios", "Configuracion"}
+
+          necesarias = {
+              "Gasolineras",
+              "Precios",
+              "Configuracion"
+          }
 
           if not necesarias.issubset(nombres):
               raise Exception("Faltan tablas necesarias.")
 
           print("SQLite: OK")
+
           conexion.close()
           PY
