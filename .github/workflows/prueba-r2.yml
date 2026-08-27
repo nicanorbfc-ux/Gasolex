@@ -13,7 +13,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Descargar gasolex.db desde R2
-      - name: Descargar gasolex.db desde R2
         uses: keithweaver/aws-s3-cp-action@v1
         with:
           source: "s3://gasolex/gasolex.db"
