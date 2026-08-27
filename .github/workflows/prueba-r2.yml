@@ -1,0 +1,53 @@
+name: Prueba R2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prueba-r2:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Descargar gasolex.db desde R2
+      - name: Descargar gasolex.db desde R2
+        uses: keithweaver/aws-s3-cp-action@v1
+        with:
+          source: "s3://gasolex/gasolex.db"
+          dest: "./gasolex.db"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_ENDPOINT_URL: https://f0026ea67a66c1918d0233254ca21b0f.r2.cloudflarestorage.com
+
+      - name: Comprobar SQLite
+        run: |
+          python - <<'PY'
+          import sqlite3
+
+          conexion = sqlite3.connect("gasolex.db")
+
+          tablas = conexion.execute("""
+              SELECT name
+              FROM sqlite_master
+              WHERE type = 'table'
+              ORDER BY name
+          """).fetchall()
+
+          print("Tablas encontradas:")
+          for tabla in tablas:
+              print(" -", tabla[0])
+
+          nombres = {tabla[0] for tabla in tablas}
+          necesarias = {"Gasolineras", "Precios", "Configuracion"}
+
+          if not necesarias.issubset(nombres):
+              raise Exception("Faltan tablas necesarias.")
+
+          print("SQLite: OK")
+          conexion.close()
+          PY
