@@ -1,0 +1,83 @@
+name: Actualizar GASOLEX
+
+on:
+  workflow_dispatch:
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar dependencias
+        run: pip install requests boto3
+
+      - name: Descargar gasolex.db desde R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: f0026ea67a66c1918d0233254ca21b0f
+        run: |
+          python - <<'PY'
+          import boto3
+          import os
+
+          endpoint = (
+              f"https://{os.environ['R2_ACCOUNT_ID']}"
+              ".r2.cloudflarestorage.com"
+          )
+
+          s3 = boto3.client(
+              "s3",
+              endpoint_url=endpoint,
+              region_name="auto",
+              aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"]
+          )
+
+          s3.download_file(
+              "gasolex",
+              "gasolex.db",
+              "gasolex.db"
+          )
+
+          print("Descarga de gasolex.db: OK")
+          PY
+
+      - name: Ejecutar actualizador
+        run: python actualizador.py
+
+      - name: Subir gasolex.db a R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: f0026ea67a66c1918d0233254ca21b0f
+        run: |
+          python - <<'PY'
+          import boto3
+          import os
+
+          endpoint = (
+              f"https://{os.environ['R2_ACCOUNT_ID']}"
+              ".r2.cloudflarestorage.com"
+          )
+
+          s3 = boto3.client(
+              "s3",
+              endpoint_url=endpoint,
+              region_name="auto",
+              aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"]
+          )
+
+          s3.upload_file(
+              "gasolex.db",
+              "gasolex",
+              "gasolex.db"
+          )
+
+          print("Subida de gasolex.db a R2: OK")
+          PY
