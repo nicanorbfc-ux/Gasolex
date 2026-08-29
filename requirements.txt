@@ -3,3 +3,4 @@ requests
 streamlit-geolocation
 folium
 streamlit-folium
+boto3
