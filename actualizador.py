@@ -12,7 +12,7 @@
 
 import sqlite3
 import requests
-
+import sys
 
 # ============================================================
 # 2. CONFIGURACIÓN
@@ -450,6 +450,8 @@ except Exception as error:
     print()
     print("ERROR durante la actualización.")
     print(f"ROLLBACK ejecutado: {error}")
+
+    sys.exit(1)
 
 finally:
 
