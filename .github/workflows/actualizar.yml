@@ -3,6 +3,11 @@ name: Actualizar GASOLEX
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: "15 23 * * *"
+    - cron: "15 7 * * *"
+    - cron: "15 17 * * *"
+
 jobs:
   actualizar:
     runs-on: ubuntu-latest
