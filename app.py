@@ -3,6 +3,17 @@
 # ============================================================
 
 import streamlit as st
+
+# PRUEBA R2
+try:
+    clave_acceso = st.secrets["R2_ACCESS_KEY_ID"]
+    clave_secreta = st.secrets["R2_SECRET_ACCESS_KEY"]
+
+    st.write("R2: claves encontradas correctamente")
+
+except Exception as error:
+    st.error(f"R2: error al leer Secrets: {error}")
+
 import sqlite3
 import requests
 import gasolex
