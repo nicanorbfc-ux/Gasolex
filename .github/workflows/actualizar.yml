@@ -51,6 +51,11 @@ jobs:
 
           print("Descarga de gasolex.db: OK")
           PY
+      - name: Comprobar Access Key de R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        run: |
+          echo "Access Key usada por GitHub: ${AWS_ACCESS_KEY_ID:0:4}****"
 
       - name: Ejecutar actualizador
         run: python actualizador.py
