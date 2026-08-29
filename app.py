@@ -3,19 +3,9 @@
 # ============================================================
 
 import streamlit as st
-
-# PRUEBA R2
-try:
-    clave_acceso = st.secrets["R2_ACCESS_KEY_ID"]
-    clave_secreta = st.secrets["R2_SECRET_ACCESS_KEY"]
-
-    st.write("R2: claves encontradas correctamente")
-
-except Exception as error:
-    st.error(f"R2: error al leer Secrets: {error}")
-
 import sqlite3
 import requests
+import boto3
 import gasolex
 from streamlit_geolocation import streamlit_geolocation
 import folium
@@ -43,11 +33,28 @@ if "nombre_origen" not in st.session_state:
 
 
 # ============================================================
-# CONEXIÓN CON SQLITE
+# CONEXIÓN CON R2 Y SQLITE
 # ============================================================
+
+R2_ACCOUNT_ID = "f0026ea67a66c1918d0233254ca21b0f"
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+    region_name="auto",
+    aws_access_key_id=st.secrets["R2_ACCESS_KEY_ID"],
+    aws_secret_access_key=st.secrets["R2_SECRET_ACCESS_KEY"]
+)
+
+s3.download_file(
+    "gasolex",
+    "gasolex.db",
+    "gasolex.db"
+)
 
 conexion = sqlite3.connect("gasolex.db")
 cursor = conexion.cursor()
+
 cursor.execute("""
     SELECT Valor
     FROM Configuracion
