@@ -46,11 +46,15 @@ s3 = boto3.client(
     aws_secret_access_key=st.secrets["R2_SECRET_ACCESS_KEY"]
 )
 
-s3.download_file(
-    "gasolex",
-    "gasolex.db",
-    "gasolex.db"
+
+respuesta = s3.get_object(
+    Bucket="gasolex",
+    Key="gasolex.db"
 )
+
+with open("gasolex.db", "wb") as archivo:
+    archivo.write(respuesta["Body"].read())
+
 
 conexion = sqlite3.connect("gasolex.db")
 cursor = conexion.cursor()
