@@ -46,6 +46,7 @@ s3 = boto3.client(
     aws_secret_access_key=st.secrets["R2_SECRET_ACCESS_KEY"]
 )
 
+st.write(s3.list_objects_v2(Bucket="gasolex"))
 
 respuesta = s3.get_object(
     Bucket="gasolex",
