@@ -12,6 +12,10 @@ from streamlit_geolocation import streamlit_geolocation
 import folium
 from streamlit_folium import st_folium
 
+import botocore
+st.write("boto3:", boto3.__version__)
+st.write("botocore:", botocore.__version__)
+
 # ============================================================
 # CONFIGURACIÓN
 # ============================================================
