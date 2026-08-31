@@ -52,7 +52,8 @@ s3 = boto3.client(
     config=Config(signature_version="s3v4")
 )
 st.write("Access Key:", st.secrets["R2_ACCESS_KEY_ID"][:4] + "****")
-
+st.write("Access Key longitud:", len(st.secrets["R2_ACCESS_KEY_ID"]))
+st.write("Secret longitud:", len(st.secrets["R2_SECRET_ACCESS_KEY"]))
 respuesta = s3.get_object(
     Bucket="gasolex",
     Key="gasolex.db"
