@@ -6,6 +6,7 @@ import streamlit as st
 import sqlite3
 import requests
 import boto3
+from botocore.client import Config
 import gasolex
 from streamlit_geolocation import streamlit_geolocation
 import folium
@@ -43,7 +44,8 @@ s3 = boto3.client(
     endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
     region_name="auto",
     aws_access_key_id=st.secrets["R2_ACCESS_KEY_ID"],
-    aws_secret_access_key=st.secrets["R2_SECRET_ACCESS_KEY"]
+    aws_secret_access_key=st.secrets["R2_SECRET_ACCESS_KEY"],
+    config=Config(signature_version="s3v4")
 )
 st.write("Access Key:", st.secrets["R2_ACCESS_KEY_ID"][:4] + "****")
 
