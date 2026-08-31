@@ -21,7 +21,10 @@ jobs:
           import boto3
           import os
           from botocore.client import Config
-
+          print("Access Key:  ", os.environ["AWS_ACCESS_KEY_ID"][:4] + "****" + os.environ["AWS_ACCESS_KEY_ID"][-4:])
+          print("Access Key longitud:", len(os.environ["AWS_ACCESS_KEY_ID"]))
+          print("Secret longitud:", len(os.environ["AWS_SECRET_ACCESS_KEY"]))
+ 
           endpoint = (
               f"https://{os.environ['R2_ACCOUNT_ID']}"
               ".r2.cloudflarestorage.com"
