@@ -20,6 +20,7 @@ jobs:
           python - <<'PY'
           import boto3
           import os
+          from botocore.client import Config
 
           endpoint = (
               f"https://{os.environ['R2_ACCOUNT_ID']}"
@@ -31,7 +32,8 @@ jobs:
               endpoint_url=endpoint,
               region_name="auto",
               aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-              aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"]
+              aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+              config=Config(signature_version="s3v4")
           )
 
           respuesta = s3.get_object(
